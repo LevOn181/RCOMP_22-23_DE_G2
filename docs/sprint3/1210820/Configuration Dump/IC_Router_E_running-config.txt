@@ -1,0 +1,245 @@
+!
+version 15.1
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname IC_Router_E
+!
+!
+!
+ip dhcp excluded-address 10.80.212.193 10.80.212.194
+ip dhcp excluded-address 10.80.212.1 10.80.212.2
+ip dhcp excluded-address 10.80.211.1 10.80.211.2
+ip dhcp excluded-address 10.80.214.33 10.80.214.34
+!
+!
+ip dhcp pool BE_GF
+ network 10.80.212.192 255.255.255.192
+ default-router 10.80.212.194
+ dns-server 10.80.214.99
+ domain-name building-E.rcomp-22-23-de-g2
+ip dhcp pool BE_FF
+ network 10.80.212.0 255.255.255.192
+ default-router 10.80.212.2
+ dns-server 10.80.214.99
+ domain-name building-E.rcomp-22-23-de-g2
+ip dhcp pool BE_WiFi
+ network 10.80.211.0 255.255.255.128
+ default-router 10.80.211.2
+ dns-server 10.80.214.99
+ domain-name building-E.rcomp-22-23-de-g2
+ip dhcp pool BE_VoIP
+ network 10.80.214.32 255.255.255.224
+ option 150 ip 10.80.214.34
+!
+!
+!
+no ip cef
+no ipv6 cef
+!
+!
+!
+license udi pid CISCO2811/K9 sn FTX1017X0SY-
+!
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+interface FastEthernet0/0
+ no ip address
+ duplex auto
+ speed auto
+ shutdown
+!
+interface FastEthernet0/1
+ no ip address
+ duplex auto
+ speed auto
+ shutdown
+!
+interface FastEthernet1/0
+ no ip address
+!
+interface FastEthernet1/0.1
+ encapsulation dot1Q 466
+ ip address 10.80.212.194 255.255.255.192
+!
+interface FastEthernet1/0.2
+ encapsulation dot1Q 467
+ ip address 10.80.212.2 255.255.255.192
+!
+interface FastEthernet1/0.3
+ encapsulation dot1Q 468
+ ip address 10.80.211.2 255.255.255.128
+!
+interface FastEthernet1/0.4
+ encapsulation dot1Q 469
+ ip address 10.80.214.98 255.255.255.224
+!
+interface FastEthernet1/0.5
+ encapsulation dot1Q 470
+ ip address 10.80.214.34 255.255.255.224
+!
+interface FastEthernet1/0.6
+ encapsulation dot1Q 445
+ ip address 10.80.209.6 255.255.255.128
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+!
+router ospf 1
+ log-adjacency-changes
+ redistribute static subnets 
+ redistribute connected subnets 
+ network 10.80.212.192 0.0.0.63 area 5
+ network 10.80.212.0 0.0.0.63 area 5
+ network 10.80.211.0 0.0.0.127 area 5
+ network 10.80.214.96 0.0.0.31 area 5
+ network 10.80.214.32 0.0.0.31 area 5
+ network 10.80.209.0 0.0.0.127 area 0
+!
+!
+router rip
+!
+ip nat inside source static tcp 10.80.214.100 80 10.80.209.6 80 
+ip nat inside source static tcp 10.80.214.99 53 10.80.209.6 53 
+ip nat inside source static udp 10.80.214.99 53 10.80.209.6 53 
+ip nat inside source static tcp 10.80.214.100 443 10.80.209.6 443 
+ip classless
+ip route 0.0.0.0 0.0.0.0 10.80.209.1 
+!
+!
+ip classless
+ip route 0.0.0.0 0.0.0.0 10.80.209.1 
+!
+ip flow-export version 9
+!
+!
+ip access-list extended FF
+ permit ip 10.80.212.0 0.0.0.63 any
+ permit icmp any any echo
+ permit icmp any any echo-reply
+ permit ip host 0.0.0.0 host 0.0.0.0
+ permit udp host 0.0.0.0 eq bootpc host 255.255.255.255 eq bootps
+ permit ospf any any
+ deny ip any host 10.80.211.2
+ deny ip any host 10.80.212.194
+ deny ip any host 10.80.214.34
+ deny ip any host 10.80.214.98
+ip access-list extended GF
+ permit ip 10.80.212.192 0.0.0.63 any
+ permit icmp any any echo
+ permit icmp any any echo-reply
+ permit ip host 0.0.0.0 host 0.0.0.0
+ permit udp host 0.0.0.0 eq bootpc host 255.255.255.255 eq bootps
+ permit ospf any any
+ deny ip any host 10.80.211.2
+ deny ip any host 10.80.212.2
+ deny ip any host 10.80.214.34
+ deny ip any host 10.80.214.98
+ip access-list extended WiFi
+ permit ip 10.80.210.0 0.0.0.63 any
+ permit icmp any any echo
+ permit icmp any any echo-reply
+ permit ip host 0.0.0.0 host 0.0.0.0
+ permit udp host 0.0.0.0 eq bootpc host 255.255.255.255 eq bootps
+ permit ospf any any
+ deny ip any host 10.80.211.194
+ deny ip any host 10.80.214.2
+ deny ip any host 10.80.214.146
+ip access-list extended VoIP
+ permit icmp any any echo
+ permit icmp any any echo-reply
+ permit ip host 0.0.0.0 host 0.0.0.0
+ permit udp host 0.0.0.0 eq bootpc host 255.255.255.255 eq bootps
+ permit ospf any any
+ deny ip any host 10.80.210.2
+ deny ip any host 10.80.211.194
+ deny ip any host 10.80.214.2
+ deny ip any host 10.80.214.178
+ip access-list extended DMZ
+ permit icmp any any echo
+ permit icmp any any echo-reply
+ permit tcp any host 10.80.214.100 eq www
+ permit tcp any host 10.80.214.100 eq 443
+ permit udp any host 10.80.214.99 eq domain
+ permit udp any eq domain host 10.80.214.99
+ permit tcp any host 10.80.214.99 eq domain
+ permit tcp any eq domain host 10.80.214.99
+ip access-list extended BB
+ deny ip 10.80.211.0 0.0.0.127 any
+ deny ip 10.80.212.0 0.0.0.63 any
+ deny ip 10.80.212.192 0.0.0.63 any
+ deny ip 10.80.214.32 0.0.0.31 any
+ deny ip 10.80.214.96 0.0.0.31 any
+ permit udp host 0.0.0.0 eq bootpc host 255.255.255.255 eq bootps
+ permit ospf any any
+ permit tcp any host 10.80.209.6 eq www
+ permit tcp any host 10.80.209.6 eq 443
+ permit tcp any host 10.80.209.6 eq domain
+ permit udp any host 10.80.209.6 eq domain
+ deny ip any host 10.80.211.2
+ deny ip any host 10.80.212.2
+ deny ip any host 10.80.212.194
+ deny ip any host 10.80.214.32
+!
+!
+!
+dial-peer voice 1 voip
+ destination-pattern 1...
+ session target ipv4:10.80.209.1
+!
+dial-peer voice 2 voip
+ destination-pattern 2...
+ session target ipv4:10.80.209.3
+!
+dial-peer voice 3 voip
+ destination-pattern 4...
+ session target ipv4:10.80.209.5
+!
+dial-peer voice 4 voip
+ destination-pattern 5...
+ session target ipv4:10.80.209.6
+!
+telephony-service
+ max-ephones 5
+ max-dn 100
+ ip source-address 10.80.214.34 port 2000
+ auto assign 1 to 2
+!
+ephone-dn 1
+ number 5001
+!
+ephone-dn 2
+ number 5002
+!
+ephone 1
+ device-security-mode none
+ mac-address 0009.7C83.A604
+ type 7960
+ button 1:1
+!
+ephone 2
+ device-security-mode none
+ mac-address 0040.0BC1.4C30
+ type 7960
+ button 1:2
+!
+!
+!
+line con 0
+!
+line aux 0
+!
+line vty 0 4
+ login
+!
+!
+!
+end
+
